@@ -34,63 +34,113 @@ import { MOODS, NAV_ITEMS } from './constants';
 
 // --- Components ---
 
-const Sidebar = ({ activeScreen, onNavigate }: { activeScreen: Screen, onNavigate: (s: Screen) => void }) => {
+const Sidebar = ({ activeScreen, onNavigate, isOpen, onClose }: { activeScreen: Screen, onNavigate: (s: Screen) => void, isOpen: boolean, onClose: () => void }) => {
   return (
-    <aside className="w-60 h-screen fixed left-0 top-0 bg-white border-r border-lavender-mist flex flex-col z-50">
-      <div className="p-6">
-        <div className="flex items-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-bloom-purple rounded-xl flex items-center justify-center text-white text-xl font-bold">B</div>
-          <h1 className="text-2xl font-display font-bold text-deep-violet tracking-tight">Bloom</h1>
-        </div>
+    <>
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] lg:hidden"
+          />
+        )}
+      </AnimatePresence>
 
-        <div className="bg-lavender-mist/30 p-4 rounded-2xl mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-blush-rose border-2 border-white overflow-hidden">
-              <img src="https://picsum.photos/seed/malika/100/100" alt="User" referrerPolicy="no-referrer" />
+      <aside className={`w-64 h-screen fixed left-0 top-0 bg-white border-r border-lavender-mist flex flex-col z-[70] transition-transform duration-300 lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+        <div className="p-6 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10 bg-bloom-purple rounded-xl flex items-center justify-center text-white text-xl font-bold">B</div>
+              <h1 className="text-2xl font-display font-bold text-deep-violet tracking-tight">Bloom</h1>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-deep-violet">Malika</p>
-              <p className="text-xs text-bloom-purple flex items-center gap-1">
-                <Flame size={12} className="fill-bloom-purple" /> 7 kun streak
-              </p>
+            <button onClick={onClose} className="lg:hidden p-2 text-ink/40 hover:text-bloom-purple">
+              <Plus className="rotate-45" size={24} />
+            </button>
+          </div>
+
+          <div className="bg-lavender-mist/30 p-4 rounded-2xl mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-blush-rose border-2 border-white overflow-hidden">
+                <img src="https://picsum.photos/seed/malika/100/100" alt="User" referrerPolicy="no-referrer" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-deep-violet">Malika</p>
+                <p className="text-xs text-bloom-purple flex items-center gap-1">
+                  <Flame size={12} className="fill-bloom-purple" /> 7 kun streak
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => onNavigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                activeScreen === item.id 
-                  ? 'bg-bloom-purple text-white shadow-lg shadow-bloom-purple/20' 
-                  : 'text-ink/60 hover:bg-lavender-mist/50 hover:text-deep-violet'
-              }`}
-            >
-              <span className="text-lg">{item.icon}</span>
-              <span className="text-sm font-medium">{item.label}</span>
+          <nav className="space-y-1 flex-1 overflow-y-auto scrollbar-hide">
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { onNavigate(item.id); onClose(); }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                  activeScreen === item.id 
+                    ? 'bg-bloom-purple text-white shadow-lg shadow-bloom-purple/20' 
+                    : 'text-ink/60 hover:bg-lavender-mist/50 hover:text-deep-violet'
+                }`}
+              >
+                <span className="text-lg">{item.icon}</span>
+                <span className="text-sm font-medium">{item.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <div className="mt-6">
+            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-colors font-semibold">
+              <AlertCircle size={20} />
+              <span>SOS Yordam</span>
             </button>
-          ))}
-        </nav>
-      </div>
-
-      <div className="mt-auto p-6">
-        <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-colors font-semibold">
-          <AlertCircle size={20} />
-          <span>SOS Yordam</span>
-        </button>
-      </div>
-    </aside>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
 
-const RightPanel = () => {
+const BottomNav = ({ activeScreen, onNavigate }: { activeScreen: Screen, onNavigate: (s: Screen) => void }) => {
+  const mobileItems = [
+    { id: 'dashboard' as Screen, icon: <Home size={20} />, label: 'Asosiy' },
+    { id: 'ai-chat' as Screen, icon: <MessageCircle size={20} />, label: 'Nilufar' },
+    { id: 'journal' as Screen, icon: <BookOpen size={20} />, label: 'Kundalik' },
+    { id: 'wellness' as Screen, icon: <Wind size={20} />, label: 'Wellness' },
+    { id: 'community' as Screen, icon: <Users size={20} />, label: 'Hamjamiyat' },
+  ];
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-lavender-mist px-4 py-2 flex justify-around items-center z-50 lg:hidden">
+      {mobileItems.map((item) => (
+        <button
+          key={item.id}
+          onClick={() => onNavigate(item.id)}
+          className={`flex flex-col items-center gap-1 p-2 transition-colors ${
+            activeScreen === item.id ? 'text-bloom-purple' : 'text-ink/40'
+          }`}
+        >
+          {item.icon}
+          <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+        </button>
+      ))}
+    </nav>
+  );
+};
+
+const RightPanel = ({ onNavigate }: { onNavigate: (s: Screen) => void }) => {
   return (
     <aside className="w-[300px] h-screen fixed right-0 top-0 bg-soft-cream/50 p-6 hidden xl:block border-l border-lavender-mist">
       <div className="space-y-6">
         <div className="bg-white p-5 rounded-3xl shadow-sm border border-lavender-mist">
-          <h3 className="font-display text-lg mb-4">Bugungi kayfiyat</h3>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-display text-lg">Bugungi kayfiyat</h3>
+            <button onClick={() => onNavigate('mood-history')} className="text-[10px] font-bold text-bloom-purple uppercase tracking-widest hover:underline">Tarix</button>
+          </div>
           <div className="flex justify-between">
             {MOODS.map(m => (
               <button key={m.id} className="text-2xl hover:scale-125 transition-transform">{m.emoji}</button>
@@ -165,26 +215,23 @@ const Dashboard = () => {
         </div>
 
         <div className="bg-white p-6 rounded-3xl border border-lavender-mist shadow-sm">
-          <h3 className="font-display text-xl mb-4">Davom etamiz</h3>
+          <h3 className="font-display text-xl mb-4">Kunlik vazifalar</h3>
           <div className="space-y-3">
-            <div className="p-3 bg-blush-rose/30 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-xl">📓</div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-deep-violet">Oxirgi yozuv</p>
-                <p className="text-[10px] text-ink/60">Kecha, 22:15</p>
-              </div>
-              <ChevronRight size={16} className="text-ink/30" />
-            </div>
-            <div className="p-3 bg-sage-teal/10 rounded-2xl flex items-center gap-3">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-xl">🎙</div>
-              <div className="flex-1">
-                <p className="text-xs font-bold text-deep-violet">Podkast</p>
-                <div className="w-full h-1 bg-white rounded-full mt-1">
-                  <div className="w-[40%] h-full bg-sage-teal rounded-full"></div>
+            {[
+              { t: 'Nafas mashqi', d: '5 min', c: true },
+              { t: 'Kundalikka yozish', d: '2 min', c: false },
+              { t: 'Yaxshi niyat', d: '1 min', c: false },
+            ].map((v, i) => (
+              <div key={i} className="flex items-center gap-3 p-2 rounded-xl hover:bg-lavender-mist/20 transition-colors">
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${v.c ? 'bg-bloom-purple border-bloom-purple text-white' : 'border-lavender-mist'}`}>
+                  {v.c && <Plus size={12} className="rotate-45" />}
+                </div>
+                <div className="flex-1">
+                  <p className={`text-xs font-bold ${v.c ? 'line-through text-ink/40' : 'text-deep-violet'}`}>{v.t}</p>
+                  <p className="text-[10px] text-ink/40">{v.d}</p>
                 </div>
               </div>
-              <Play size={16} className="text-sage-teal fill-sage-teal" />
-            </div>
+            ))}
           </div>
         </div>
 
@@ -623,6 +670,139 @@ const Psychologists = () => {
   );
 };
 
+const MoodHistory = () => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
+      <header>
+        <h2 className="text-4xl font-display text-deep-violet mb-2">Hissiyotlar tarixi</h2>
+        <p className="text-ink/60">O'tgan haftadagi kayfiyatingiz tahlili.</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-[2.5rem] border border-lavender-mist shadow-sm">
+          <h3 className="font-display text-xl mb-6">Haftalik trend</h3>
+          <div className="h-48 flex items-end gap-3">
+            {[
+              { d: 'Du', h: 60, m: '😊' },
+              { d: 'Se', h: 40, m: '😐' },
+              { d: 'Ch', h: 80, m: '🌟' },
+              { d: 'Pa', h: 50, m: '😊' },
+              { d: 'Ju', h: 30, m: '😔' },
+              { d: 'Sh', h: 70, m: '😊' },
+              { d: 'Ya', h: 90, m: '🌟' },
+            ].map((day, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                <div className="text-lg">{day.m}</div>
+                <div 
+                  style={{ height: `${day.h}%` }} 
+                  className="w-full bg-bloom-purple/20 rounded-t-lg border-t-2 border-bloom-purple relative group"
+                >
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-deep-violet text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                    {day.h}%
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-ink/40 uppercase">{day.d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white p-8 rounded-[2.5rem] border border-lavender-mist shadow-sm space-y-6">
+          <h3 className="font-display text-xl">Xulosalar</h3>
+          <div className="space-y-4">
+            <div className="p-4 bg-sage-teal/10 rounded-2xl border border-sage-teal/20">
+              <p className="text-sm text-deep-violet font-medium">Siz dushanba kunlari ko'proq energiya bilan to'lasiz.</p>
+            </div>
+            <div className="p-4 bg-petal-pink/10 rounded-2xl border border-petal-pink/20">
+              <p className="text-sm text-deep-violet font-medium">Juma kuni biroz tushkunlik kuzatildi. Dam olishga vaqt ajrating.</p>
+            </div>
+            <div className="p-4 bg-sunlit-amber/10 rounded-2xl border border-sunlit-amber/20">
+              <p className="text-sm text-deep-violet font-medium">Hafta davomida 3 marta "Ajoyib" kayfiyatda bo'ldingiz! 🌟</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+const SettingsScreen = () => {
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
+      <header>
+        <h2 className="text-4xl font-display text-deep-violet mb-2">Sozlamalar</h2>
+        <p className="text-ink/60">Ilovani o'zingizga moslashtiring.</p>
+      </header>
+
+      <div className="bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden shadow-sm">
+        <div className="p-8 space-y-6">
+          <section className="space-y-4">
+            <h3 className="font-display text-xl">Profil</h3>
+            <div className="flex items-center gap-6">
+              <div className="w-20 h-20 rounded-full bg-blush-rose border-4 border-white shadow-lg overflow-hidden">
+                <img src="https://picsum.photos/seed/malika/200/200" alt="User" referrerPolicy="no-referrer" />
+              </div>
+              <div className="flex-1">
+                <p className="text-lg font-bold text-deep-violet">Malika</p>
+                <p className="text-sm text-ink/60">malika@example.com</p>
+              </div>
+              <button className="px-4 py-2 bg-lavender-mist/40 rounded-xl text-xs font-bold text-bloom-purple hover:bg-bloom-purple hover:text-white transition-all">Tahrirlash</button>
+            </div>
+          </section>
+
+          <hr className="border-lavender-mist" />
+
+          <section className="space-y-4">
+            <h3 className="font-display text-xl">Bildirishnomalar</h3>
+            <div className="space-y-3">
+              {[
+                { t: 'Kunlik eslatma', d: 'Har kuni soat 09:00 da', s: true },
+                { t: 'Nilufar xabarlari', d: 'AI maslahatchidan yangi xabarlar', s: true },
+                { t: 'Hamjamiyat yangiliklari', d: 'Yangi postlar va izohlar', s: false },
+              ].map((n, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-soft-cream/30 rounded-2xl">
+                  <div>
+                    <p className="text-sm font-bold text-deep-violet">{n.t}</p>
+                    <p className="text-[10px] text-ink/40">{n.d}</p>
+                  </div>
+                  <div className={`w-12 h-6 rounded-full p-1 transition-colors cursor-pointer ${n.s ? 'bg-bloom-purple' : 'bg-lavender-mist'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full transition-transform ${n.s ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <hr className="border-lavender-mist" />
+
+          <section className="space-y-4">
+            <h3 className="font-display text-xl">Maxfiylik</h3>
+            <div className="space-y-3">
+              <button className="w-full flex items-center justify-between p-4 bg-soft-cream/30 rounded-2xl hover:bg-lavender-mist/20 transition-all">
+                <span className="text-sm font-bold text-deep-violet">Parol va xavfsizlik</span>
+                <ChevronRight size={16} className="text-ink/30" />
+              </button>
+              <button className="w-full flex items-center justify-between p-4 bg-soft-cream/30 rounded-2xl hover:bg-lavender-mist/20 transition-all">
+                <span className="text-sm font-bold text-deep-violet">Ma'lumotlarni eksport qilish</span>
+                <ChevronRight size={16} className="text-ink/30" />
+              </button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+
 
 const AIChat = () => {
   const [messages, setMessages] = useState([
@@ -647,21 +827,28 @@ const AIChat = () => {
     setIsTyping(true);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("API_KEY_MISSING");
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: [
-          { role: 'user', parts: [{ text: `You are Nilufar, an empathetic AI mental wellness companion for Uzbek women. Be warm, supportive, and use a gentle tone in Uzbek. User says: ${input}` }] }
-        ],
+        contents: `Foydalanuvchi: ${input}`,
         config: {
-          systemInstruction: "You are Nilufar, a supportive mental health companion. Your goal is to listen, validate feelings, and provide gentle wellness advice. Avoid clinical diagnosis. Speak in warm, supportive Uzbek."
+          systemInstruction: "Siz Nilufarsiz, o'zbek ayollari uchun mehribon va qo'llab-quvvatlovchi AI psixologik yordamchisiz. Maqsadingiz tinglash, his-tuyg'ularni tasdiqlash va muloyim wellness maslahatlari berishdir. Klinik tashxis qo'ymang. Har doim iliq va muloyim o'zbek tilida gapiring."
         }
       });
 
       setMessages(prev => [...prev, { role: 'ai', text: response.text || "Kechirasiz, hozir javob bera olmayman. Birozdan so'ng urinib ko'ring." }]);
     } catch (error) {
       console.error("AI Error:", error);
-      setMessages(prev => [...prev, { role: 'ai', text: "Tizimda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring." }]);
+      if (error instanceof Error && error.message === "API_KEY_MISSING") {
+        setMessages(prev => [...prev, { role: 'ai', text: "Xatolik: API kaliti topilmadi. Iltimos, Netlify sozlamalarida GEMINI_API_KEY o'zgaruvchisini o'rnating." }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'ai', text: "Tizimda xatolik yuz berdi. Iltimos, qaytadan urinib ko'ring yoki internet aloqasini tekshiring." }]);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -886,6 +1073,7 @@ const Games = () => {
 
 export default function App() {
   const [activeScreen, setActiveScreen] = useState<Screen>('dashboard');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const renderScreen = () => {
     switch (activeScreen) {
@@ -898,16 +1086,37 @@ export default function App() {
       case 'wellness': return <Wellness />;
       case 'community': return <Community />;
       case 'psychologists': return <Psychologists />;
+      case 'settings': return <SettingsScreen />;
+      case 'mood-history': return <MoodHistory />;
       default: return <div className="flex items-center justify-center h-full text-ink/40 font-display text-2xl italic">Tez orada... 🌸</div>;
     }
   };
 
   return (
-    <div className="min-h-screen flex bg-soft-cream">
-      <Sidebar activeScreen={activeScreen} onNavigate={setActiveScreen} />
+    <div className="min-h-screen flex bg-soft-cream overflow-x-hidden">
+      <Sidebar 
+        activeScreen={activeScreen} 
+        onNavigate={setActiveScreen} 
+        isOpen={isSidebarOpen} 
+        onClose={() => setIsSidebarOpen(false)} 
+      />
       
-      <main className="flex-1 ml-60 mr-0 xl:mr-[300px] p-10 min-h-screen overflow-y-auto scrollbar-hide">
+      <main className="flex-1 lg:ml-64 xl:mr-[300px] p-6 md:p-10 min-h-screen overflow-y-auto scrollbar-hide pb-24 lg:pb-10">
         <div className="max-w-4xl mx-auto">
+          {/* Mobile Header */}
+          <header className="flex items-center justify-between mb-8 lg:hidden">
+            <button onClick={() => setIsSidebarOpen(true)} className="p-2 bg-white rounded-xl border border-lavender-mist text-deep-violet">
+              <MoreHorizontal size={24} />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-bloom-purple rounded-lg flex items-center justify-center text-white text-sm font-bold">B</div>
+              <h1 className="text-xl font-display font-bold text-deep-violet">Bloom</h1>
+            </div>
+            <div className="w-10 h-10 rounded-full bg-blush-rose border-2 border-white overflow-hidden">
+              <img src="https://picsum.photos/seed/malika/100/100" alt="User" referrerPolicy="no-referrer" />
+            </div>
+          </header>
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeScreen}
@@ -922,7 +1131,8 @@ export default function App() {
         </div>
       </main>
 
-      <RightPanel />
+      <RightPanel onNavigate={setActiveScreen} />
+      <BottomNav activeScreen={activeScreen} onNavigate={setActiveScreen} />
     </div>
   );
 }

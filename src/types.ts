@@ -8,7 +8,8 @@ export type Screen =
   | 'wellness' 
   | 'community' 
   | 'psychologists' 
-  | 'settings';
+  | 'settings'
+  | 'mood-history';
 
 export interface Mood {
   id: string;
