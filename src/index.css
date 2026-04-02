@@ -1,0 +1,58 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Sora", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-accent: "DM Serif Display", serif;
+
+  --color-lavender-mist: #EEE6FA;
+  --color-bloom-purple: #9B7FC4;
+  --color-deep-violet: #3C2064;
+  --color-blush-rose: #F7E8F2;
+  --color-petal-pink: #E4A0B8;
+  --color-sage-teal: #6BB8C4;
+  --color-sunlit-amber: #F5C842;
+  --color-soft-cream: #FDFAF6;
+  --color-ink: #1E1428;
+
+  --radius-xl: 1.5rem;
+  --radius-2xl: 2rem;
+}
+
+@layer base {
+  body {
+    @apply bg-soft-cream text-ink font-sans antialiased;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display text-deep-violet;
+  }
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=DM+Serif+Display:ital@0;1&display=swap');
+
+.glass-card {
+  @apply bg-white/40 backdrop-blur-md border border-white/20 shadow-sm;
+}
+
+.bloom-gradient {
+  background: linear-gradient(135deg, #EEE6FA 0%, #F7E8F2 100%);
+}
+
+.writing-canvas {
+  background-image: linear-gradient(#e5e7eb 1px, transparent 1px);
+  background-size: 100% 2rem;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-soft-cream;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-lavender-mist rounded-full hover:bg-bloom-purple/50 transition-colors;
+}
