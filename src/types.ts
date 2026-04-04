@@ -8,8 +8,10 @@ export type Screen =
   | 'wellness' 
   | 'community' 
   | 'psychologists' 
+  | 'library'
   | 'settings'
-  | 'mood-history';
+  | 'mood-history'
+  | 'sos';
 
 export interface Mood {
   id: string;
@@ -54,4 +56,24 @@ export interface Psychologist {
   reviews: number;
   price: string;
   avatar: string;
+}
+
+export interface VideoItem {
+  id: string;
+  youtubeId: string;
+  title: string;
+  description?: string;
+  duration?: string;
+  category?: string;
+}
+
+export interface Book {
+  id: string;
+  title: string;
+  author: string;
+  description: string;
+  cover: string;
+  type: 'audio' | 'ebook';
+  url: string;
+  category: string;
 }

@@ -26,13 +26,55 @@ import {
   Star,
   ChevronRight,
   Flame,
-  MoreHorizontal
+  MoreHorizontal,
+  Phone
 } from 'lucide-react';
 import { GoogleGenAI } from "@google/genai";
-import { Screen, Mood, JournalEntry, Game, Podcast, Psychologist } from './types';
+import { Screen, Mood, JournalEntry, Game, Podcast, Psychologist, VideoItem, Book } from './types';
 import { MOODS, NAV_ITEMS } from './constants';
 
 // --- Components ---
+
+const VideoCard: React.FC<{ video: VideoItem, type?: 'podcast' | 'music' | 'yoga' }> = ({ video, type = 'podcast' }) => {
+  const thumbnailUrl = `https://img.youtube.com/vi/${video.youtubeId}/maxresdefault.jpg`;
+  const youtubeUrl = `https://www.youtube.com/watch?v=${video.youtubeId}`;
+
+  return (
+    <motion.div 
+      whileHover={{ y: -10 }}
+      className="w-full group cursor-pointer"
+      onClick={() => window.open(youtubeUrl, '_blank')}
+    >
+      <div className="h-44 rounded-[2rem] overflow-hidden mb-4 relative shadow-lg">
+        <img 
+          src={thumbnailUrl} 
+          alt={video.title} 
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+          referrerPolicy="no-referrer" 
+        />
+        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+          <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center text-deep-violet shadow-2xl transform scale-90 group-hover:scale-100 transition-transform">
+            <Play size={24} fill="currentColor" className="ml-1" />
+          </div>
+        </div>
+        {video.duration && (
+          <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg">
+            {video.duration}
+          </div>
+        )}
+      </div>
+      <h5 className="font-display text-lg text-deep-violet group-hover:text-bloom-purple transition-colors line-clamp-2 leading-tight">
+        {video.title}
+      </h5>
+      {video.category && (
+        <p className="text-[10px] text-ink/40 font-bold uppercase tracking-widest mt-2 flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-bloom-purple"></span>
+          {video.category}
+        </p>
+      )}
+    </motion.div>
+  );
+};
 
 const Sidebar = ({ activeScreen, onNavigate, isOpen, onClose }: { activeScreen: Screen, onNavigate: (s: Screen) => void, isOpen: boolean, onClose: () => void }) => {
   return (
@@ -54,8 +96,8 @@ const Sidebar = ({ activeScreen, onNavigate, isOpen, onClose }: { activeScreen: 
         <div className="p-6 h-full flex flex-col">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-bloom-purple rounded-xl flex items-center justify-center text-white text-xl font-bold">B</div>
-              <h1 className="text-2xl font-display font-bold text-deep-violet tracking-tight">Bloom</h1>
+              <div className="w-10 h-10 bg-bloom-purple rounded-xl flex items-center justify-center text-white text-xl font-bold">A</div>
+              <h1 className="text-2xl font-display font-bold text-deep-violet tracking-tight">Ayol</h1>
             </div>
             <button onClick={onClose} className="lg:hidden p-2 text-ink/40 hover:text-bloom-purple">
               <Plus className="rotate-45" size={24} />
@@ -94,7 +136,14 @@ const Sidebar = ({ activeScreen, onNavigate, isOpen, onClose }: { activeScreen: 
           </nav>
 
           <div className="mt-6">
-            <button className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 bg-red-50 hover:bg-red-100 transition-colors font-semibold">
+            <button 
+              onClick={() => { onNavigate('sos'); onClose(); }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-colors font-semibold ${
+                activeScreen === 'sos'
+                  ? 'bg-red-500 text-white shadow-lg shadow-red-500/20'
+                  : 'text-red-500 bg-red-50 hover:bg-red-100'
+              }`}
+            >
               <AlertCircle size={20} />
               <span>SOS Yordam</span>
             </button>
@@ -108,7 +157,7 @@ const Sidebar = ({ activeScreen, onNavigate, isOpen, onClose }: { activeScreen: 
 const BottomNav = ({ activeScreen, onNavigate }: { activeScreen: Screen, onNavigate: (s: Screen) => void }) => {
   const mobileItems = [
     { id: 'dashboard' as Screen, icon: <Home size={20} />, label: 'Asosiy' },
-    { id: 'ai-chat' as Screen, icon: <MessageCircle size={20} />, label: 'Nilufar' },
+    { id: 'ai-chat' as Screen, icon: <MessageCircle size={20} />, label: 'Ayol GPT' },
     { id: 'journal' as Screen, icon: <BookOpen size={20} />, label: 'Kundalik' },
     { id: 'wellness' as Screen, icon: <Wind size={20} />, label: 'Wellness' },
     { id: 'community' as Screen, icon: <Users size={20} />, label: 'Hamjamiyat' },
@@ -176,6 +225,8 @@ const RightPanel = ({ onNavigate }: { onNavigate: (s: Screen) => void }) => {
 // --- Screens ---
 
 const Dashboard = () => {
+  const [happiness, setHappiness] = useState(70);
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
@@ -183,9 +234,36 @@ const Dashboard = () => {
       className="space-y-8"
     >
       <header>
-        <h2 className="text-4xl font-display text-deep-violet mb-2">Xayrli tong, Malika 🌸</h2>
-        <p className="text-ink/60">Bugun o'zingizni qanday his qilyapsiz?</p>
+        <h2 className="text-3xl lg:text-4xl font-display text-deep-violet mb-2">Xayrli tong, Malika 🌸</h2>
+        <p className="text-ink/60 text-sm lg:text-base">Bugun o'zingizni qanday his qilyapsiz?</p>
       </header>
+
+      {/* Baxt Shkalasi */}
+      <div className="bg-white p-6 rounded-3xl border border-lavender-mist shadow-sm">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="font-display text-xl">Baxt shkalasi</h3>
+          <span className="text-2xl font-bold text-bloom-purple">{happiness}%</span>
+        </div>
+        <div className="relative h-4 bg-lavender-mist rounded-full overflow-hidden mb-4">
+          <motion.div 
+            initial={{ width: 0 }}
+            animate={{ width: `${happiness}%` }}
+            className="h-full bg-gradient-to-r from-petal-pink to-bloom-purple"
+          />
+        </div>
+        <div className="flex justify-between text-[10px] font-bold text-ink/40 uppercase tracking-widest">
+          <span>Kamroq</span>
+          <span>Juda baxtli</span>
+        </div>
+        <input 
+          type="range" 
+          min="0" 
+          max="100" 
+          value={happiness} 
+          onChange={(e) => setHappiness(parseInt(e.target.value))}
+          className="w-full mt-4 accent-bloom-purple cursor-pointer"
+        />
+      </div>
 
       <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
         {MOODS.map((mood) => (
@@ -238,9 +316,13 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-3xl border border-lavender-mist shadow-sm">
           <h3 className="font-display text-xl mb-4">Hamjamiyat</h3>
           <div className="space-y-3">
-            {[1, 2, 3].map(i => (
+            {[
+              "Bugun o'zimni ancha yaxshi his qilyapman, Ayol GPT yordam berdi...",
+              "Nafas mashqlari haqiqatdan ham tinchlantirar ekan, rahmat!",
+              "Yangi podkast juda qiziqarli bo'ldi, ko'p narsani o'rgandim."
+            ].map((msg, i) => (
               <div key={i} className="text-[11px] text-ink/70 italic border-l-2 border-petal-pink pl-3 py-1">
-                "Bugun o'zimni ancha yaxshi his qilyapman, Nilufar yordam berdi..."
+                "{msg}"
               </div>
             ))}
             <p className="text-[10px] text-bloom-purple font-bold text-center mt-2">Hozir 142 ayol onlayn</p>
@@ -248,18 +330,18 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <section className="relative h-64 rounded-[2.5rem] overflow-hidden group">
+      <section className="relative h-auto min-h-[250px] rounded-[2.5rem] overflow-hidden group border-4 border-bloom-purple/20 shadow-2xl">
         <img 
           src="https://picsum.photos/seed/bloom-yoga/1200/400" 
           alt="Yoga" 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
           referrerPolicy="no-referrer"
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-deep-violet/80 to-transparent flex flex-col justify-center p-12 text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-deep-violet/90 via-deep-violet/60 to-transparent flex flex-col justify-center p-8 lg:p-12 text-white">
           <span className="bg-sunlit-amber text-deep-violet text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-4">BUGUNGI MASHQ</span>
-          <h3 className="text-3xl font-display mb-2">5 daqiqalik nafas mashqi</h3>
-          <p className="text-white/70 max-w-md mb-6">Tashvishni kamaytirish va xotirjamlikka erishish uchun oddiy texnika.</p>
-          <button className="flex items-center gap-2 bg-white text-deep-violet px-6 py-3 rounded-xl font-bold w-fit hover:bg-lavender-mist transition-colors">
+          <h3 className="text-2xl lg:text-3xl font-display mb-2">5 daqiqalik nafas mashqi</h3>
+          <p className="text-white/80 max-w-md mb-6 text-sm lg:text-base">Tashvishni kamaytirish va xotirjamlikka erishish uchun oddiy texnika.</p>
+          <button className="flex items-center gap-2 bg-white text-deep-violet px-6 py-3 rounded-xl font-bold w-fit hover:bg-lavender-mist transition-colors shadow-lg">
             <Play size={18} fill="currentColor" /> Boshlash
           </button>
         </div>
@@ -269,76 +351,89 @@ const Dashboard = () => {
 };
 
 const Podcasts = () => {
-  const categories = [
-    "🌟 Bugun uchun tavsiya",
-    "💜 Depressiyadan chiqish",
-    "💪 O'z-o'zini sevish",
-    "👩‍👧 O'smirlar uchun",
-    "🌙 Kechki tinchlanish",
+  const podcastVideos: VideoItem[] = [
+    { id: '1', youtubeId: '3S9A6Vtoc9c', title: 'Depressiyadan qanday chiqish mumkin?', duration: '24:15', category: 'Psixologiya' },
+    { id: '2', youtubeId: 'AiRKvn1BxiU', title: "O'z-o'zini sevish sirlari va mashqlari", duration: '18:40', category: 'Motivatsiya' },
+    { id: '3', youtubeId: '_Lv9wLHlI5o', title: "Tashvish va qo'rquvni yengish usullari", duration: '21:10', category: 'Wellness' },
+    { id: '4', youtubeId: 'ywjlYjQ8mbE', title: "O'smirlar ruhiyati va ota-onalar", duration: '32:05', category: 'Oila' },
+    { id: '5', youtubeId: 'kkioBoLKeZo', title: "Onalik va ruhiy salomatlik muvozanati", duration: '27:50', category: 'Ayollar' },
+    { id: '6', youtubeId: 'JjBbd9g5b6M', title: "Ishdagi stressni boshqarish san'ati", duration: '19:30', category: 'Karyera' },
+    { id: '7', youtubeId: '2jVKFBzzSFI', title: 'Baxtli hayot formulasi: 7 ta qadam', duration: '25:15', category: 'Baxt' },
   ];
 
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8"
+      className="space-y-12"
     >
       <header>
         <h2 className="text-4xl font-display text-deep-violet mb-2">Podkastlar</h2>
         <p className="text-ink/60">Ruhshunoslar va ekspertlar maslahatlari.</p>
       </header>
 
-      <div className="relative h-80 rounded-[2.5rem] overflow-hidden group shadow-xl">
-        <img src="https://picsum.photos/seed/podcast-hero/1200/600" alt="Featured" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-        <div className="absolute inset-0 bg-gradient-to-t from-deep-violet via-deep-violet/40 to-transparent p-10 flex flex-col justify-end text-white">
-          <span className="bg-petal-pink text-white text-[10px] font-bold px-3 py-1 rounded-full w-fit mb-4 uppercase tracking-widest">Yangi qism</span>
-          <h3 className="text-3xl font-display mb-2">O'zingizni kechirishni o'rganing</h3>
-          <p className="text-white/70 text-sm max-w-lg mb-6">Psixolog Nilufar bilan birgalikda o'tmishdagi xatolarni qanday qilib qo'yib yuborish haqida suhbatlashamiz.</p>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 bg-white text-deep-violet px-6 py-3 rounded-xl font-bold hover:bg-lavender-mist transition-colors">
+      <div className="relative h-auto min-h-[400px] lg:h-96 rounded-[3rem] overflow-hidden group shadow-2xl">
+        <img 
+          src={`https://img.youtube.com/vi/${podcastVideos[0].youtubeId}/maxresdefault.jpg`} 
+          alt="Featured" 
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+          referrerPolicy="no-referrer" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-deep-violet via-deep-violet/40 to-transparent p-6 lg:p-12 flex flex-col justify-end text-white">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="bg-bloom-purple text-white text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg">Tavsiya etiladi</span>
+            <span className="text-white/60 text-xs font-bold uppercase tracking-widest">{podcastVideos[0].duration}</span>
+          </div>
+          <h3 className="text-2xl lg:text-4xl font-display mb-4 max-w-2xl leading-tight">{podcastVideos[0].title}</h3>
+          <p className="text-white/80 text-sm lg:text-lg max-w-xl mb-6 lg:mb-8 font-light line-clamp-2 lg:line-clamp-none">Ayol GPT bilan birgalikda ruhiy tushkunlikdan chiqishning eng samarali yo'llari haqida suhbatlashamiz.</p>
+          <div className="flex items-center gap-4 lg:gap-6">
+            <button 
+              onClick={() => window.open(`https://www.youtube.com/watch?v=${podcastVideos[0].youtubeId}`, '_blank')}
+              className="flex items-center gap-3 bg-white text-deep-violet px-6 lg:px-8 py-3 lg:py-4 rounded-2xl font-bold hover:bg-lavender-mist transition-all shadow-xl hover:scale-105 active:scale-95 text-sm lg:text-base"
+            >
               <Play size={18} fill="currentColor" /> Tinglash
             </button>
-            <button className="p-3 bg-white/20 backdrop-blur-md rounded-xl hover:bg-white/30 transition-colors">
-              <Plus size={20} />
+            <button className="p-3 lg:p-4 bg-white/20 backdrop-blur-xl rounded-2xl hover:bg-white/30 transition-all border border-white/20">
+              <Plus size={20} className="lg:w-6 lg:h-6" />
             </button>
           </div>
         </div>
       </div>
 
-      {categories.map((cat, i) => (
-        <section key={i} className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h4 className="font-display text-xl">{cat}</h4>
-            <button className="text-xs font-bold text-bloom-purple hover:underline">Hammasini ko'rish</button>
+      <section className="space-y-6">
+        <div className="flex justify-between items-center px-2">
+          <h4 className="font-display text-2xl text-deep-violet">Barcha qismlar</h4>
+          <div className="flex gap-2">
+            <button className="p-2 bg-white border border-lavender-mist rounded-xl text-ink/40 hover:text-bloom-purple transition-all"><Search size={18} /></button>
+            <button className="p-2 bg-white border border-lavender-mist rounded-xl text-ink/40 hover:text-bloom-purple transition-all"><Filter size={18} /></button>
           </div>
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
-            {[1, 2, 3, 4].map(j => (
-              <div key={j} className="flex-shrink-0 w-64 group cursor-pointer">
-                <div className="h-40 rounded-3xl overflow-hidden mb-3 relative">
-                  <img src={`https://picsum.photos/seed/pod-${i}-${j}/400/300`} alt="Cover" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-deep-violet shadow-lg">
-                      <Play size={20} fill="currentColor" />
-                    </div>
-                  </div>
-                </div>
-                <h5 className="font-display text-base text-deep-violet group-hover:text-bloom-purple transition-colors">Ruhiy muvozanat sirlari</h5>
-                <p className="text-[10px] text-ink/40 font-bold uppercase tracking-widest mt-1">Nilufar · 24 daqiqa</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {podcastVideos.map((video) => (
+            <VideoCard key={video.id} video={video} />
+          ))}
+        </div>
+      </section>
     </motion.div>
   );
 };
 
 const MusicScreen = () => {
+  const musicVideos: VideoItem[] = [
+    { id: '1', youtubeId: 'sx_NDOkEHN4', title: 'Lofi Hip Hop Radio - Relaxing Beats', duration: 'LIVE', category: 'Relax' },
+    { id: '2', youtubeId: 'S-dRotOi01Q', title: 'Deep Focus Music for Study & Work', duration: '3:00:00', category: 'Focus' },
+    { id: '3', youtubeId: 'DZteznd47B4', title: 'Calming Piano Music for Stress Relief', duration: '2:15:30', category: 'Piano' },
+    { id: '4', youtubeId: '2A951VZuenw', title: 'Nature Sounds: Forest Rain & Birds', duration: '1:45:20', category: 'Nature' },
+    { id: '5', youtubeId: 'pqstFOre2a4', title: 'Tibetan Singing Bowls Meditation', duration: '1:10:00', category: 'Zen' },
+    { id: '6', youtubeId: '5Gk3xpXtFj4', title: 'Zen Meditation Music for Inner Peace', duration: '2:00:00', category: 'Meditation' },
+    { id: '7', youtubeId: 'lHAXakHAv5Q', title: 'Soft Jazz for Evening Relaxation', duration: '1:30:00', category: 'Jazz' },
+  ];
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8"
+      className="space-y-12"
     >
       <header className="flex justify-between items-end">
         <div>
@@ -347,66 +442,75 @@ const MusicScreen = () => {
         </div>
         <div className="flex gap-2">
           {['😔', '🌟', '🧘', '💪', '😊'].map(e => (
-            <button key={e} className="w-10 h-10 bg-white rounded-xl border border-lavender-mist flex items-center justify-center text-xl hover:border-bloom-purple transition-all">{e}</button>
+            <button key={e} className="w-12 h-12 bg-white rounded-2xl border border-lavender-mist flex items-center justify-center text-2xl hover:border-bloom-purple hover:scale-110 transition-all shadow-sm">{e}</button>
           ))}
         </div>
       </header>
 
-      <div className="bg-white rounded-[2.5rem] border border-lavender-mist p-8 flex flex-col md:flex-row gap-10 items-center shadow-sm">
-        <div className="w-64 h-64 relative group">
+      <div className="bg-white rounded-[3rem] border border-lavender-mist p-6 lg:p-10 flex flex-col lg:flex-row gap-8 lg:gap-12 items-center shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-bloom-purple/5 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-petal-pink/10 rounded-full -ml-24 -mb-24 blur-2xl"></div>
+        
+        <div className="w-48 h-48 lg:w-72 lg:h-72 relative group flex-shrink-0">
           <div className="absolute inset-0 bg-bloom-purple rounded-full blur-3xl opacity-20 group-hover:opacity-40 transition-opacity animate-pulse"></div>
-          <img 
-            src="https://picsum.photos/seed/music-playing/400/400" 
-            alt="Album" 
-            className="w-full h-full object-cover rounded-3xl relative z-10 shadow-2xl animate-[spin_20s_linear_infinite]"
-            referrerPolicy="no-referrer"
-          />
-          <div className="absolute inset-0 flex items-center justify-center z-20">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-full border border-white/40"></div>
+          <div className="w-full h-full rounded-[2rem] lg:rounded-[2.5rem] overflow-hidden relative z-10 shadow-2xl border-4 border-white">
+            <img 
+              src={`https://img.youtube.com/vi/${musicVideos[0].youtubeId}/maxresdefault.jpg`} 
+              alt="Album" 
+              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000"
+              referrerPolicy="no-referrer"
+            />
+            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+              <div className="w-12 h-12 lg:w-16 lg:h-16 bg-white/30 backdrop-blur-md rounded-full border border-white/50 flex items-center justify-center">
+                <div className="w-2 h-2 lg:w-3 lg:h-3 bg-white rounded-full animate-ping"></div>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex-1 space-y-6 w-full">
+
+        <div className="flex-1 space-y-6 lg:space-y-8 w-full relative z-10 text-center lg:text-left">
           <div>
-            <h3 className="text-3xl font-display text-deep-violet mb-1">Tinchlik ohangi</h3>
-            <p className="text-bloom-purple font-medium">Instrumental · Bloom Relax</p>
-          </div>
-          <div className="space-y-2">
-            <div className="w-full h-1.5 bg-lavender-mist rounded-full overflow-hidden relative">
-              <div className="w-[45%] h-full bg-bloom-purple rounded-full"></div>
+            <div className="flex items-center justify-center lg:justify-start gap-2 mb-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              <span className="text-[10px] font-bold text-red-500 uppercase tracking-[0.2em]">Hozir jonli efirda</span>
             </div>
-            <div className="flex justify-between text-[10px] font-bold text-ink/40">
-              <span>2:15</span>
-              <span>4:30</span>
-            </div>
+            <h3 className="text-2xl lg:text-4xl font-display text-deep-violet mb-2 leading-tight">{musicVideos[0].title}</h3>
+            <p className="text-bloom-purple font-bold text-base lg:text-lg">Lofi · Ayol Radio</p>
           </div>
-          <div className="flex items-center justify-center md:justify-start gap-8">
-            <button className="text-ink/40 hover:text-bloom-purple transition-colors"><Music size={20} /></button>
-            <button className="text-ink/40 hover:text-bloom-purple transition-colors"><Play size={24} className="rotate-180" /></button>
-            <button className="w-16 h-16 bg-bloom-purple text-white rounded-full flex items-center justify-center shadow-xl shadow-bloom-purple/30 hover:scale-105 transition-transform">
-              <Play size={32} fill="currentColor" />
+          
+          <div className="flex flex-col lg:flex-row items-center gap-6">
+            <button 
+              onClick={() => window.open(`https://www.youtube.com/watch?v=${musicVideos[0].youtubeId}`, '_blank')}
+              className="w-16 h-16 lg:w-20 lg:h-20 bg-bloom-purple text-white rounded-full flex items-center justify-center shadow-2xl shadow-bloom-purple/40 hover:scale-110 active:scale-95 transition-all group"
+            >
+              <Play size={28} lg:size={36} fill="currentColor" className="ml-1 group-hover:scale-110 transition-transform" />
             </button>
-            <button className="text-ink/40 hover:text-bloom-purple transition-colors"><Play size={24} /></button>
-            <button className="text-ink/40 hover:text-bloom-purple transition-colors"><Heart size={20} /></button>
+            <div className="flex-1 space-y-2 w-full">
+              <div className="w-full h-2 bg-lavender-mist rounded-full overflow-hidden relative">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: "65%" }}
+                  transition={{ duration: 2, ease: "easeOut" }}
+                  className="h-full bg-bloom-purple rounded-full"
+                ></motion.div>
+              </div>
+              <div className="flex justify-between text-[10px] lg:text-xs font-bold text-ink/40">
+                <span>12:45</span>
+                <span>LIVE</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-        {[
-          { title: 'Depressiya uchun', color: 'bg-lavender-mist' },
-          { title: 'Ertalab energiya', color: 'bg-sunlit-amber/20' },
-          { title: 'Yog\'ingarda tinchlik', color: 'bg-sage-teal/20' },
-          { title: 'Kecha uxlashdan oldin', color: 'bg-deep-violet/10' },
-        ].map((p, i) => (
-          <div key={i} className={`${p.color} p-6 rounded-[2rem] border border-white/40 group cursor-pointer hover:shadow-lg transition-all`}>
-            <div className="w-full aspect-square rounded-2xl overflow-hidden mb-4">
-              <img src={`https://picsum.photos/seed/playlist-${i}/300/300`} alt="Playlist" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" referrerPolicy="no-referrer" />
-            </div>
-            <h4 className="font-display text-lg text-deep-violet">{p.title}</h4>
-            <p className="text-[10px] font-bold text-ink/40 mt-1 uppercase tracking-widest">12 trek · 45 daqiqa</p>
-          </div>
-        ))}
-      </div>
+      <section className="space-y-6">
+        <h4 className="font-display text-2xl text-deep-violet px-2">Siz uchun tanlangan</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {musicVideos.slice(1).map((video) => (
+            <VideoCard key={video.id} video={video} type="music" />
+          ))}
+        </div>
+      </section>
     </motion.div>
   );
 };
@@ -414,6 +518,13 @@ const MusicScreen = () => {
 const Wellness = () => {
   const [isBreathing, setIsBreathing] = useState(false);
   const [breathPhase, setBreathPhase] = useState('Nafas oling');
+
+  const yogaVideos: VideoItem[] = [
+    { id: '1', youtubeId: 'yqeirBfn2j4', title: 'Ertalabki yoga mashqlari: Kunni energiya bilan boshlang', duration: '15:20', category: 'Yoga' },
+    { id: '2', youtubeId: 'H_uc-uQ3Nkc', title: "Boshlang'ichlar uchun yoga: 20 daqiqalik to'liq dars", duration: '20:45', category: 'Yoga' },
+    { id: '3', youtubeId: '9MazN_6wdqI', title: 'Tinchlantiruvchi yoga: Stress va tashvishni kamaytirish', duration: '12:30', category: 'Yoga' },
+    { id: '4', youtubeId: 'VpHz8Mb13_Y', title: 'Uyqudan oldin yoga: Chuqur dam olish uchun', duration: '10:15', category: 'Yoga' },
+  ];
 
   useEffect(() => {
     if (!isBreathing) return;
@@ -434,41 +545,18 @@ const Wellness = () => {
     <motion.div 
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-8"
+      className="space-y-12"
     >
       <header>
         <h2 className="text-4xl font-display text-deep-violet mb-2">Yoga & Nafas</h2>
         <p className="text-ink/60">Tana va ruh muvozanati uchun mashqlar.</p>
       </header>
 
-      <div className="flex gap-6 h-[calc(100vh-250px)]">
-        <div className="w-80 bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden flex flex-col shadow-sm">
-          <div className="p-4 border-b border-lavender-mist flex gap-2 overflow-x-auto scrollbar-hide">
-            {['Hammasi', 'Yoga', 'Nafas', 'Meditatsiya'].map(t => (
-              <button key={t} className="flex-shrink-0 px-4 py-2 bg-lavender-mist/40 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-bloom-purple hover:text-white transition-all">{t}</button>
-            ))}
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
-            {[
-              { title: 'Depressiya uchun yoga', time: '15 min', level: 'Boshlang\'ich', tag: 'Yoga' },
-              { title: 'Tinchlantiruvchi nafas', time: '5 min', level: 'Boshlang\'ich', tag: 'Nafas' },
-              { title: 'Uyqu oldidan meditatsiya', time: '10 min', level: 'O\'rta', tag: 'Meditatsiya' },
-              { title: 'Ertalabki energiya', time: '20 min', level: 'Ilg\'or', tag: 'Yoga' },
-            ].map((p, i) => (
-              <div key={i} className="p-4 rounded-2xl border border-lavender-mist hover:border-bloom-purple cursor-pointer transition-all group">
-                <div className="flex justify-between items-start mb-2">
-                  <span className="text-[10px] font-bold text-bloom-purple uppercase tracking-widest">{p.tag}</span>
-                  <span className="text-[10px] text-ink/40">{p.time}</span>
-                </div>
-                <h5 className="font-display text-base text-deep-violet mb-1">{p.title}</h5>
-                <p className="text-[10px] text-ink/40 font-bold uppercase">{p.level}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex-1 bg-white rounded-[2.5rem] border border-lavender-mist shadow-sm flex flex-col items-center justify-center p-12 relative overflow-hidden">
-          <div className="absolute inset-0 bg-bloom-gradient opacity-10"></div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="bg-white rounded-[3rem] border border-lavender-mist shadow-xl flex flex-col items-center justify-center p-6 lg:p-16 relative overflow-hidden min-h-[400px] lg:min-h-[500px]">
+          <div className="absolute inset-0 bg-bloom-gradient opacity-5"></div>
+          <div className="absolute top-10 left-10 w-32 h-32 bg-bloom-purple/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-32 h-32 bg-petal-pink/5 rounded-full blur-3xl"></div>
           
           <AnimatePresence mode="wait">
             {!isBreathing ? (
@@ -477,18 +565,19 @@ const Wellness = () => {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.1 }}
-                className="text-center space-y-8 relative z-10"
+                className="text-center space-y-10 relative z-10"
               >
-                <div className="w-48 h-48 bg-lavender-mist rounded-full flex items-center justify-center mx-auto shadow-inner border-4 border-white">
-                  <Wind size={64} className="text-bloom-purple" />
+                <div className="w-56 h-56 bg-lavender-mist/30 rounded-full flex items-center justify-center mx-auto shadow-inner border-8 border-white relative">
+                  <div className="absolute inset-0 rounded-full border-2 border-bloom-purple/20 animate-ping"></div>
+                  <Wind size={80} className="text-bloom-purple" />
                 </div>
                 <div>
-                  <h3 className="text-3xl font-display text-deep-violet mb-2">Nafas mashqi</h3>
-                  <p className="text-ink/60 max-w-xs mx-auto">4-4-6 texnikasi orqali tashvishni kamaytiring va xotirjamlikka erishing.</p>
+                  <h3 className="text-4xl font-display text-deep-violet mb-4">Nafas mashqi</h3>
+                  <p className="text-ink/60 max-w-sm mx-auto text-lg">4-4-6 texnikasi orqali tashvishni kamaytiring va xotirjamlikka erishing.</p>
                 </div>
                 <button 
                   onClick={() => setIsBreathing(true)}
-                  className="px-10 py-4 bg-bloom-purple text-white rounded-2xl font-bold hover:bg-deep-violet transition-all shadow-xl shadow-bloom-purple/20"
+                  className="px-12 py-5 bg-bloom-purple text-white rounded-[2rem] font-bold text-lg hover:bg-deep-violet transition-all shadow-2xl shadow-bloom-purple/30 hover:scale-105 active:scale-95"
                 >
                   Boshlash
                 </button>
@@ -498,27 +587,64 @@ const Wellness = () => {
                 key="breathing"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-center space-y-12 relative z-10"
+                className="text-center space-y-16 relative z-10"
               >
                 <div className="relative flex items-center justify-center">
                   <motion.div 
                     animate={{ 
-                      scale: breathPhase === 'Nafas oling' ? [1, 1.5] : breathPhase === 'Ushlab turing' ? 1.5 : [1.5, 1],
+                      scale: breathPhase === 'Nafas oling' ? [1, 1.8] : breathPhase === 'Ushlab turing' ? 1.8 : [1.8, 1],
                     }}
                     transition={{ duration: breathPhase === 'Chiqaring' ? 6 : 4, ease: "easeInOut" }}
-                    className="w-48 h-48 bg-bloom-purple/20 rounded-full border-2 border-bloom-purple"
-                  />
-                  <div className="absolute text-2xl font-display text-deep-violet">{breathPhase}</div>
+                    className="w-56 h-56 bg-bloom-purple/10 rounded-full border-4 border-bloom-purple relative"
+                  >
+                    <div className="absolute inset-0 rounded-full bg-bloom-purple/5 animate-pulse"></div>
+                  </motion.div>
+                  <div className="absolute text-3xl font-display text-deep-violet tracking-wide">{breathPhase}</div>
                 </div>
                 <button 
                   onClick={() => setIsBreathing(false)}
-                  className="text-xs font-bold text-ink/40 uppercase tracking-widest hover:text-red-500 transition-colors"
+                  className="text-sm font-bold text-ink/40 uppercase tracking-[0.3em] hover:text-red-500 transition-colors border-b-2 border-transparent hover:border-red-500 pb-1"
                 >
                   To'xtatish
                 </button>
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
+
+        <div className="space-y-8">
+          <div className="flex justify-between items-center px-2">
+            <h4 className="font-display text-2xl text-deep-violet">Yoga darslari</h4>
+            <button className="text-xs font-bold text-bloom-purple hover:underline">Barchasi</button>
+          </div>
+          <div className="grid grid-cols-1 gap-6">
+            {yogaVideos.map((video) => (
+              <div 
+                key={video.id} 
+                className="bg-white p-4 rounded-[2.5rem] border border-lavender-mist shadow-sm flex gap-6 hover:shadow-xl transition-all duration-500 group cursor-pointer"
+                onClick={() => window.open(`https://www.youtube.com/watch?v=${video.youtubeId}`, '_blank')}
+              >
+                <div className="w-40 h-28 rounded-3xl overflow-hidden flex-shrink-0 relative shadow-md">
+                  <img 
+                    src={`https://img.youtube.com/vi/${video.youtubeId}/mqdefault.jpg`} 
+                    alt={video.title} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
+                    referrerPolicy="no-referrer" 
+                  />
+                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Play size={20} fill="currentColor" className="text-white" />
+                  </div>
+                </div>
+                <div className="flex-1 flex flex-col justify-center">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-[10px] font-bold text-bloom-purple uppercase tracking-widest">{video.category}</span>
+                    <span className="text-[10px] text-ink/40 font-bold">{video.duration}</span>
+                  </div>
+                  <h5 className="font-display text-lg text-deep-violet group-hover:text-bloom-purple transition-colors leading-tight">{video.title}</h5>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </motion.div>
@@ -532,12 +658,12 @@ const Community = () => {
       animate={{ opacity: 1, y: 0 }}
       className="space-y-8"
     >
-      <header className="flex justify-between items-end">
+      <header className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
         <div>
-          <h2 className="text-4xl font-display text-deep-violet mb-2">Hamjamiyat</h2>
-          <p className="text-ink/60">Siz yolg'iz emassiz. Anonim va xavfsiz suhbatlar.</p>
+          <h2 className="text-3xl lg:text-4xl font-display text-deep-violet mb-2">Hamjamiyat</h2>
+          <p className="text-ink/60 text-sm lg:text-base">Siz yolg'iz emassiz. Anonim va xavfsiz suhbatlar.</p>
         </div>
-        <button className="px-6 py-3 bg-bloom-purple text-white rounded-xl font-bold hover:bg-deep-violet transition-all shadow-lg shadow-bloom-purple/20">
+        <button className="w-full sm:w-auto px-6 py-3 bg-bloom-purple text-white rounded-xl font-bold hover:bg-deep-violet transition-all shadow-lg shadow-bloom-purple/20">
           Xabar yozish
         </button>
       </header>
@@ -550,27 +676,49 @@ const Community = () => {
             ))}
           </div>
 
-          {[1, 2, 3].map(i => (
+          {[
+            {
+              time: '2 soat oldin',
+              category: 'Depressiya',
+              text: "Bugun o'zimni juda yolg'iz his qilyapman. Hech kim meni tushunmaydigandek tuyuladi. Lekin Ayol ilovasidagi podkastlarni eshitib, biroz bo'lsa ham taskin topdim. Sizlarda ham shunday holat bo'ladimi?",
+              likes: 24,
+              comments: 8
+            },
+            {
+              time: '5 soat oldin',
+              category: 'Oila',
+              text: "O'smir qizim bilan munosabatlarimiz ancha yaxshilandi. Bu yerdagi psixologlar maslahati juda asqotdi. Hamma ayollarga sabr va matonat tilayman!",
+              likes: 42,
+              comments: 15
+            },
+            {
+              time: 'Kecha',
+              category: 'Ish stresi',
+              text: "Ishdagi stressdan charchagan edim. Kechagi meditatsiya mashqi uxlashimga yordam berdi. Kichik qadamlar bilan katta natijalarga erishish mumkinligiga ishondim.",
+              likes: 18,
+              comments: 4
+            }
+          ].map((post, i) => (
             <div key={i} className="bg-white p-6 rounded-[2rem] border border-lavender-mist shadow-sm space-y-4">
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-lavender-mist rounded-full flex items-center justify-center text-xl">🌸</div>
                   <div>
                     <p className="text-xs font-bold text-deep-violet">Anonim foydalanuvchi</p>
-                    <p className="text-[10px] text-ink/40">2 soat oldin · Depressiya</p>
+                    <p className="text-[10px] text-ink/40">{post.time} · {post.category}</p>
                   </div>
                 </div>
                 <button className="text-ink/30 hover:text-bloom-purple transition-colors"><MoreHorizontal size={18} /></button>
               </div>
               <p className="text-sm text-ink/80 leading-relaxed">
-                Bugun o'zimni juda yolg'iz his qilyapman. Hech kim meni tushunmaydigandek tuyuladi. Lekin Bloom'dagi podkastlarni eshitib, biroz bo'lsa ham taskin topdim. Sizlarda ham shunday holat bo'ladimi?
+                {post.text}
               </p>
               <div className="flex gap-4 pt-2">
                 <button className="flex items-center gap-1.5 text-[10px] font-bold text-ink/40 hover:text-petal-pink transition-colors">
-                  <Heart size={14} /> 24 Tushunaman
+                  <Heart size={14} /> {post.likes} Tushunaman
                 </button>
                 <button className="flex items-center gap-1.5 text-[10px] font-bold text-ink/40 hover:text-bloom-purple transition-colors">
-                  <MessageCircle size={14} /> 8 Izohlar
+                  <MessageCircle size={14} /> {post.comments} Izohlar
                 </button>
                 <button className="flex items-center gap-1.5 text-[10px] font-bold text-ink/40 hover:text-sage-teal transition-colors ml-auto">
                   <Share2 size={14} /> Ulashish
@@ -584,7 +732,7 @@ const Community = () => {
           <div className="bg-white p-6 rounded-[2rem] border border-lavender-mist shadow-sm">
             <h4 className="font-display text-lg mb-4">Guruhlar</h4>
             <div className="space-y-2">
-              {['Depressiya', 'Tashvish', 'O\'smirlar', 'Onalik', 'Ish stresi'].map(g => (
+              {["Depressiya", "Tashvish", "O'smirlar", "Onalik", "Ish stresi"].map(g => (
                 <button key={g} className="w-full text-left text-xs p-3 rounded-xl hover:bg-lavender-mist/40 transition-all flex justify-between items-center group">
                   <span>{g}</span>
                   <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -604,10 +752,14 @@ const Community = () => {
 
 const Psychologists = () => {
   const experts: Psychologist[] = [
-    { id: '1', name: 'Dr. Nigora Alieva', specialty: ['Depressiya', 'Tashvish'], experience: '12 yil', rating: 4.9, reviews: 124, price: '150,000 so\'m', avatar: 'https://picsum.photos/seed/doc1/200/200' },
-    { id: '2', name: 'Malika Karimova', specialty: ['O\'smirlar', 'Oila'], experience: '8 yil', rating: 4.8, reviews: 89, price: '120,000 so\'m', avatar: 'https://picsum.photos/seed/doc2/200/200' },
-    { id: '3', name: 'Aziza Mansurova', specialty: ['Travma', 'Onalik'], experience: '15 yil', rating: 5.0, reviews: 210, price: '200,000 so\'m', avatar: 'https://picsum.photos/seed/doc3/200/200' },
-    { id: '4', name: 'Shahnoza Ergasheva', specialty: ['Ish stresi', 'Depressiya'], experience: '6 yil', rating: 4.7, reviews: 56, price: '100,000 so\'m', avatar: 'https://picsum.photos/seed/doc4/200/200' },
+    { id: '1', name: 'Dr. Nigora Alieva', specialty: ['Depressiya', 'Tashvish'], experience: '12 yil', rating: 4.9, reviews: 124, price: "150,000 so'm", avatar: 'https://picsum.photos/seed/doc1/200/200' },
+    { id: '2', name: 'Malika Karimova', specialty: ["O'smirlar", 'Oila'], experience: '8 yil', rating: 4.8, reviews: 89, price: "120,000 so'm", avatar: 'https://picsum.photos/seed/doc2/200/200' },
+    { id: '3', name: 'Aziza Mansurova', specialty: ['Travma', 'Onalik'], experience: '15 yil', rating: 5.0, reviews: 210, price: "200,000 so'm", avatar: 'https://picsum.photos/seed/doc3/200/200' },
+    { id: '4', name: 'Shahnoza Ergasheva', specialty: ['Ish stresi', 'Depressiya'], experience: '6 yil', rating: 4.7, reviews: 56, price: "100,000 so'm", avatar: 'https://picsum.photos/seed/doc4/200/200' },
+    { id: '5', name: 'Dilfuza Umarova', specialty: ['Motivatsiya', 'Karyera'], experience: '10 yil', rating: 4.9, reviews: 78, price: "140,000 so'm", avatar: 'https://picsum.photos/seed/doc5/200/200' },
+    { id: '6', name: 'Zaynab Sodiqova', specialty: ['Bolalar psixologiyasi'], experience: '7 yil', rating: 4.6, reviews: 45, price: "110,000 so'm", avatar: 'https://picsum.photos/seed/doc6/200/200' },
+    { id: '7', name: 'Rayhon G\'anieva', specialty: ['Stress boshqaruvi'], experience: '9 yil', rating: 4.8, reviews: 112, price: "130,000 so'm", avatar: 'https://picsum.photos/seed/doc7/200/200' },
+    { id: '8', name: 'Guli Asqarova', specialty: ['Oila va munosabatlar'], experience: '14 yil', rating: 4.9, reviews: 156, price: "180,000 so'm", avatar: 'https://picsum.photos/seed/doc8/200/200' },
   ];
 
   return (
@@ -678,8 +830,8 @@ const MoodHistory = () => {
       className="space-y-8"
     >
       <header>
-        <h2 className="text-4xl font-display text-deep-violet mb-2">Hissiyotlar tarixi</h2>
-        <p className="text-ink/60">O'tgan haftadagi kayfiyatingiz tahlili.</p>
+        <h2 className="text-3xl lg:text-4xl font-display text-deep-violet mb-2">Hissiyotlar tarixi</h2>
+        <p className="text-ink/60 text-sm lg:text-base">O'tgan haftadagi kayfiyatingiz tahlili.</p>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -738,8 +890,8 @@ const SettingsScreen = () => {
       className="space-y-8"
     >
       <header>
-        <h2 className="text-4xl font-display text-deep-violet mb-2">Sozlamalar</h2>
-        <p className="text-ink/60">Ilovani o'zingizga moslashtiring.</p>
+        <h2 className="text-3xl lg:text-4xl font-display text-deep-violet mb-2">Sozlamalar</h2>
+        <p className="text-ink/60 text-sm lg:text-base">Ilovani o'zingizga moslashtiring.</p>
       </header>
 
       <div className="bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden shadow-sm">
@@ -765,7 +917,7 @@ const SettingsScreen = () => {
             <div className="space-y-3">
               {[
                 { t: 'Kunlik eslatma', d: 'Har kuni soat 09:00 da', s: true },
-                { t: 'Nilufar xabarlari', d: 'AI maslahatchidan yangi xabarlar', s: true },
+                { t: 'Ayol GPT xabarlari', d: 'AI maslahatchidan yangi xabarlar', s: true },
                 { t: 'Hamjamiyat yangiliklari', d: 'Yangi postlar va izohlar', s: false },
               ].map((n, i) => (
                 <div key={i} className="flex items-center justify-between p-4 bg-soft-cream/30 rounded-2xl">
@@ -804,9 +956,66 @@ const SettingsScreen = () => {
 
 
 
+const SOS = ({ onNavigate }: { onNavigate: (s: Screen) => void }) => {
+  const emergencyContacts = [
+    { name: "Ishonch telefoni", phone: "1148", desc: "Ayollar va bolalar uchun psixologik yordam" },
+    { name: "Toshkent shahar IIBB", phone: "102", desc: "Favqulodda vaziyatlar uchun" },
+    { name: "Tez yordam", phone: "103", desc: "Tibbiy yordam uchun" },
+    { name: "Yong'in xavfsizligi", phone: "101", desc: "Yong'in holatlarida" },
+  ];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="max-w-2xl mx-auto space-y-8"
+    >
+      <header className="text-center space-y-4">
+        <div className="w-20 h-20 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto animate-pulse">
+          <AlertCircle size={40} />
+        </div>
+        <h2 className="text-3xl lg:text-4xl font-display text-deep-violet">SOS Yordam</h2>
+        <p className="text-ink/60">Siz yolg'iz emassiz. Biz har doim yoningizdamiz. Quyidagi raqamlarga istalgan vaqtda qo'ng'iroq qilishingiz mumkin.</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {emergencyContacts.map((contact, i) => (
+          <div key={i} className="bg-white p-6 rounded-[2rem] border border-red-100 shadow-sm hover:shadow-md transition-all group">
+            <div className="flex justify-between items-start mb-4">
+              <div className="p-3 bg-red-50 text-red-500 rounded-2xl group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <Phone size={24} />
+              </div>
+              <span className="text-2xl font-display text-red-500">{contact.phone}</span>
+            </div>
+            <h3 className="font-display text-xl text-deep-violet mb-1">{contact.name}</h3>
+            <p className="text-xs text-ink/60 mb-4">{contact.desc}</p>
+            <button 
+              onClick={() => window.location.href = `tel:${contact.phone}`}
+              className="w-full py-3 bg-red-500 text-white rounded-xl font-bold hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+            >
+              Qo'ng'iroq qilish
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-bloom-purple/5 p-8 rounded-[2.5rem] border border-bloom-purple/10 text-center space-y-4">
+        <h3 className="font-display text-xl text-deep-violet">Ayol GPT bilan gaplashish</h3>
+        <p className="text-sm text-ink/60">Hozirda kimdir bilan gaplashishga ehtiyojingiz bo'lsa, bizning AI maslahatchimiz sizni eshitishga tayyor.</p>
+        <button 
+          onClick={() => onNavigate('ai-chat')}
+          className="px-8 py-3 bg-bloom-purple text-white rounded-xl font-bold hover:bg-deep-violet transition-all"
+        >
+          Chatni boshlash
+        </button>
+      </div>
+    </motion.div>
+  );
+};
+
 const AIChat = () => {
   const [messages, setMessages] = useState([
-    { role: 'ai', text: "Assalomu alaykum, Malika. Men Nilufarman, sizning sirdoshingiz. Bugun kayfiyatingiz qanday? Nimalar haqida gaplashishni xohlaysiz?" }
+    { role: 'ai', text: "Assalomu alaykum, Malika. Men Ayol GPTman, sizning sirdoshingiz. Bugun kayfiyatingiz qanday? Nimalar haqida gaplashishni xohlaysiz?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -833,11 +1042,24 @@ const AIChat = () => {
       }
 
       const ai = new GoogleGenAI({ apiKey });
+      
+      // Convert messages to Gemini format
+      const history = messages.map(m => ({
+        role: m.role === 'ai' ? 'model' : 'user',
+        parts: [{ text: m.text }]
+      }));
+      
+      // Add current user message
+      history.push({
+        role: 'user',
+        parts: [{ text: input }]
+      });
+
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
-        contents: `Foydalanuvchi: ${input}`,
+        contents: history,
         config: {
-          systemInstruction: "Siz Nilufarsiz, o'zbek ayollari uchun mehribon va qo'llab-quvvatlovchi AI psixologik yordamchisiz. Maqsadingiz tinglash, his-tuyg'ularni tasdiqlash va muloyim wellness maslahatlari berishdir. Klinik tashxis qo'ymang. Har doim iliq va muloyim o'zbek tilida gapiring."
+          systemInstruction: "Siz Ayol GPTsiz, o'zbek ayollari uchun mehribon va qo'llab-quvvatlovchi AI psixologik yordamchisiz. Maqsadingiz tinglash, his-tuyg'ularni tasdiqlash va muloyim wellness maslahatlari berishdir. Klinik tashxis qo'ymang. Har doim iliq va muloyim o'zbek tilida gapiring."
         }
       });
 
@@ -858,13 +1080,13 @@ const AIChat = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="h-[calc(100vh-120px)] flex gap-6"
+      className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-180px)] lg:h-[calc(100vh-120px)]"
     >
       <div className="flex-1 flex flex-col bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden shadow-sm">
-        <header className="p-6 border-b border-lavender-mist flex items-center gap-4 bg-lavender-mist/10">
+        <header className="p-4 lg:p-6 border-b border-lavender-mist flex items-center gap-4 bg-lavender-mist/10">
           <div className="w-12 h-12 bg-bloom-purple rounded-2xl flex items-center justify-center text-2xl animate-pulse">🌸</div>
           <div>
-            <h3 className="font-display text-xl text-deep-violet">Nilufar</h3>
+            <h3 className="font-display text-xl text-deep-violet">Ayol GPT</h3>
             <p className="text-xs text-sage-teal font-medium">Psixologik qo'llab-quvvatlash · 24/7</p>
           </div>
         </header>
@@ -951,9 +1173,9 @@ const Journal = () => {
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex gap-6 h-[calc(100vh-120px)]"
+      className="flex flex-col lg:flex-row gap-6 h-auto lg:h-[calc(100vh-120px)]"
     >
-      <div className="w-80 bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden flex flex-col shadow-sm">
+      <div className="w-full lg:w-80 bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden flex flex-col shadow-sm">
         <div className="p-6 border-b border-lavender-mist">
           <button className="w-full py-3 bg-bloom-purple text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-deep-violet transition-all shadow-lg shadow-bloom-purple/20">
             <Plus size={20} /> Yangi yozuv
@@ -977,7 +1199,7 @@ const Journal = () => {
       </div>
 
       <div className="flex-1 bg-white rounded-[2.5rem] border border-lavender-mist shadow-sm flex flex-col overflow-hidden">
-        <header className="p-6 border-b border-lavender-mist flex justify-between items-center bg-soft-cream/30">
+        <header className="p-4 lg:p-6 border-b border-lavender-mist flex justify-between items-center bg-soft-cream/30">
           <div className="flex items-center gap-4">
             <div className="text-2xl">😊</div>
             <div>
@@ -997,7 +1219,7 @@ const Journal = () => {
             <textarea 
               className="w-full bg-transparent border-none focus:outline-none text-lg leading-[2rem] text-ink/80 resize-none min-h-[500px]"
               placeholder="Yozishni boshlang..."
-              defaultValue="Bugun juda yaxshi kun bo'ldi. Ertalab Nilufar bilan gaplashdim va u menga juda yaxshi maslahatlar berdi. O'zimni ancha yengil his qilyapman. Quyosh chiqishi ham juda chiroyli edi..."
+              defaultValue="Bugun juda yaxshi kun bo'ldi. Ertalab Ayol GPT bilan gaplashdim va u menga juda yaxshi maslahatlar berdi. O'zimni ancha yengil his qilyapman. Quyosh chiqishi ham juda chiroyli edi..."
             />
           </div>
         </div>
@@ -1013,9 +1235,9 @@ const Journal = () => {
 const Games = () => {
   const games: Game[] = [
     { id: '1', title: 'Salbiy fikrlarni yutuvchi', mechanic: 'Fikrlarni pufakchalar kabi yoring', tag: 'CBT · 5 daqiqa', progress: '3/10', thumbnail: 'https://picsum.photos/seed/game1/400/300', duration: '5 min' },
-    { id: '2', title: 'Minnatdorlik bog\'i', mechanic: 'Har bir minnatdorlik uchun gul eking', tag: 'Mindfulness · 2 daqiqa', progress: '14 gul', thumbnail: 'https://picsum.photos/seed/game2/400/300', duration: '2 min' },
-    { id: '3', title: 'His-tuyg\'ular kartasi', mechanic: 'Hislar g\'ildiragini o\'rganing', tag: 'Emotional Literacy', progress: '75%', thumbnail: 'https://picsum.photos/seed/game3/400/300', duration: '10 min' },
-    { id: '4', title: 'Kelajak maktubi', mechanic: 'O\'zingizga xat yozing', tag: 'Reflective', progress: '1 xat', thumbnail: 'https://picsum.photos/seed/game4/400/300', duration: '15 min' },
+    { id: '2', title: "Minnatdorlik bog'i", mechanic: 'Har bir minnatdorlik uchun gul eking', tag: 'Mindfulness · 2 daqiqa', progress: '14 gul', thumbnail: 'https://picsum.photos/seed/game2/400/300', duration: '2 min' },
+    { id: '3', title: "His-tuyg'ular kartasi", mechanic: "Hislar g'ildiragini o'rganing", tag: 'Emotional Literacy', progress: '75%', thumbnail: 'https://picsum.photos/seed/game3/400/300', duration: '10 min' },
+    { id: '4', title: 'Kelajak maktubi', mechanic: "O'zingizga xat yozing", tag: 'Reflective', progress: '1 xat', thumbnail: 'https://picsum.photos/seed/game4/400/300', duration: '15 min' },
   ];
 
   return (
@@ -1069,6 +1291,121 @@ const Games = () => {
   );
 };
 
+const Library = () => {
+  const books: Book[] = [
+    { 
+      id: '1', 
+      title: 'Becoming: Mening hikoyam', 
+      author: 'Michelle Obama', 
+      description: 'AQSHning sobiq birinchi xonimining hayot yo\'li, qiyinchiliklar va muvaffaqiyatlari haqida samimiy hikoya.', 
+      cover: 'https://picsum.photos/seed/book1/400/600', 
+      type: 'audio', 
+      url: 'https://www.youtube.com/results?search_query=becoming+michelle+obama+audiobook+uzbek',
+      category: 'Avtobiografiya'
+    },
+    { 
+      id: '2', 
+      title: 'Men Malalaman', 
+      author: 'Malala Yousafzai', 
+      description: 'Tinchlik uchun Nobel mukofoti sovrindori Malala Yusufzayning ta\'lim olish huquqi uchun kurashi.', 
+      cover: 'https://picsum.photos/seed/book2/400/600', 
+      type: 'ebook', 
+      url: '#',
+      category: 'Huquq va Ta\'lim'
+    },
+    { 
+      id: '3', 
+      title: 'Muvaffaqiyatli ayol sirlari', 
+      author: 'Psixologik qo\'llanma', 
+      description: 'Zamonaviy ayol uchun o\'z-o\'zini anglash, karyera va oila muvozanatini saqlash bo\'yicha maslahatlar.', 
+      cover: 'https://picsum.photos/seed/book3/400/600', 
+      type: 'audio', 
+      url: 'https://www.youtube.com/results?search_query=ayollar+uchun+psixologik+kitoblar',
+      category: 'Wellness'
+    },
+    { 
+      id: '4', 
+      title: 'Educated: Bilim olish yo\'lida', 
+      author: 'Tara Westover', 
+      description: 'Hech qachon maktabga bormagan qizning Kembrij va Garvard cho\'qqilarini zabt etishi haqida.', 
+      cover: 'https://picsum.photos/seed/book4/400/600', 
+      type: 'ebook', 
+      url: '#',
+      category: 'Motivatsiya'
+    },
+    { 
+      id: '5', 
+      title: 'Ayol baxti formulasi', 
+      author: 'Ekspertlar maslahati', 
+      description: 'Ichki xotirjamlik va o\'ziga bo\'lgan ishonchni oshirish bo\'yicha amaliy mashqlar to\'plami.', 
+      cover: 'https://picsum.photos/seed/book5/400/600', 
+      type: 'audio', 
+      url: 'https://www.youtube.com/results?search_query=ayol+baxti+audio+kitob',
+      category: 'Psixologiya'
+    },
+    { 
+      id: '6', 
+      title: 'Lean In: Ayollar va yetakchilik', 
+      author: 'Sheryl Sandberg', 
+      description: 'Ish joyida ayollarning o\'rni va yetakchilik qobiliyatlarini rivojlantirish haqida.', 
+      cover: 'https://picsum.photos/seed/book6/400/600', 
+      type: 'ebook', 
+      url: '#',
+      category: 'Karyera'
+    },
+  ];
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-8"
+    >
+      <header>
+        <h2 className="text-3xl lg:text-4xl font-display text-deep-violet mb-2">Kutubxona</h2>
+        <p className="text-ink/60 text-sm lg:text-base">Ayollar kuch-qudrati va shaxsiy rivojlanish haqida eng yaxshi kitoblar.</p>
+      </header>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {books.map(book => (
+          <motion.div 
+            key={book.id}
+            whileHover={{ y: -10 }}
+            className="bg-white rounded-[2.5rem] border border-lavender-mist overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 group"
+          >
+            <div className="h-72 relative">
+              <img 
+                src={book.cover} 
+                alt={book.title} 
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-1000" 
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-bloom-purple uppercase tracking-widest shadow-sm">
+                {book.type === 'audio' ? '🎧 Audio' : '📖 E-kitob'}
+              </div>
+            </div>
+            <div className="p-6 space-y-3">
+              <div className="flex justify-between items-start">
+                <span className="text-[10px] font-bold text-bloom-purple uppercase tracking-widest">{book.category}</span>
+              </div>
+              <h3 className="font-display text-xl text-deep-violet line-clamp-1">{book.title}</h3>
+              <p className="text-[10px] font-bold text-ink/40 uppercase tracking-widest">{book.author}</p>
+              <p className="text-xs text-ink/60 line-clamp-2 leading-relaxed">{book.description}</p>
+              <button 
+                onClick={() => book.url !== '#' && window.open(book.url, '_blank')}
+                className="w-full py-3 bg-lavender-mist/30 text-bloom-purple rounded-2xl text-xs font-bold hover:bg-bloom-purple hover:text-white transition-all flex items-center justify-center gap-2"
+              >
+                {book.type === 'audio' ? <Play size={14} fill="currentColor" /> : <BookOpen size={14} />}
+                {book.type === 'audio' ? 'Eshitishni boshlash' : 'O\'qishni boshlash'}
+              </button>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
 // --- Main App ---
 
 export default function App() {
@@ -1085,9 +1422,11 @@ export default function App() {
       case 'music': return <MusicScreen />;
       case 'wellness': return <Wellness />;
       case 'community': return <Community />;
+      case 'library': return <Library />;
       case 'psychologists': return <Psychologists />;
       case 'settings': return <SettingsScreen />;
       case 'mood-history': return <MoodHistory />;
+      case 'sos': return <SOS onNavigate={setActiveScreen} />;
       default: return <div className="flex items-center justify-center h-full text-ink/40 font-display text-2xl italic">Tez orada... 🌸</div>;
     }
   };
@@ -1109,8 +1448,8 @@ export default function App() {
               <MoreHorizontal size={24} />
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-bloom-purple rounded-lg flex items-center justify-center text-white text-sm font-bold">B</div>
-              <h1 className="text-xl font-display font-bold text-deep-violet">Bloom</h1>
+              <div className="w-8 h-8 bg-bloom-purple rounded-lg flex items-center justify-center text-white text-sm font-bold">A</div>
+              <h1 className="text-xl font-display font-bold text-deep-violet">Ayol</h1>
             </div>
             <div className="w-10 h-10 rounded-full bg-blush-rose border-2 border-white overflow-hidden">
               <img src="https://picsum.photos/seed/malika/100/100" alt="User" referrerPolicy="no-referrer" />
